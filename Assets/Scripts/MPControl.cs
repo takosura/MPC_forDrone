@@ -28,13 +28,14 @@ public class MPControl : MonoBehaviour{
     public int GMRES_RepeatTime=2;
     public int PredictionTime=10;
     public float StableConstant=100;
-    public GameObject Body;
+    GameObject Body;
     public float XConstant, YConstant, ThetaConstant,dThetaConstant_Stage, LForceConstant_Stage,RForceConstant_Stage;
     public float FinalEvaluarionScope=0.5f;//[s]
+    public float[] BodyPosition_x,BodyPosition_y;//x,y
+    public float[] BodyAngle;
     Transform BodyTransform;
-    float[] BodyPosition_x,BodyPosition_y;//x,y
+    Rigidbody2D rb;
     float[] BodyVelocity_x,BodyVelocity_y;
-    float[] BodyAngle;
     float[] BodyRev;//=d(BodyAngle)/dt
     public float[] LeftPower,RightPower;
     float[] DifferentialLeftPower,DifferentialRightPower;    
@@ -63,9 +64,11 @@ public class MPControl : MonoBehaviour{
         AdjointVector_dy=new float[PredictionTime+1]; 
         AdjointVector_theta=new float[PredictionTime+1]; 
         AdjointVector_dtheta=new float[PredictionTime+1];
-        BodyTransform=Body.GetComponent<Transform>(); 
+        Body=natural.Body;
+        rb=Body.GetComponent<Rigidbody2D>();
+        BodyTransform=Body.GetComponent<Transform>();
         TorqueConstent=natural.TorqueConstant;
-        Mass=natural.Mass;
+        Mass=rb.mass;
         GrabityConstant=natural.GrabityConstant;
 
         for(int i = 0; i <PredictionTime+1 ; i++){
@@ -108,7 +111,11 @@ public class MPControl : MonoBehaviour{
 
     // Update is called once per frame
     void FixedUpdate(){
-        // モデルへの入力はNaturalファイルにて行っている
+        // モデルへの入力
+        if(MPC_mode){
+            rb.AddForce(new Vector2((LeftPower[0]+RightPower[0])*Mathf.Sin(BodyAngle[0])/Mass,(LeftPower[0]+RightPower[0])*Mathf.Cos(BodyAngle[0])/Mass));
+            rb.AddTorque(TorqueConstent*(LeftPower[0]-RightPower[0]));
+        }
 
         //measure real delta time (not evaluation delta time)
         //制御ループ周期(dt)測定
@@ -269,15 +276,17 @@ public class MPControl : MonoBehaviour{
         }
 
         //calculate U by U=(previous)U+dU/dt*dt
-        for(int i=0;i<PredictionTime;i++){
-            for(int j=0;j<GMRES_RepeatTime;j++)DifferentialInputPosition_y[i]+=OrthogonalBasis[j,i]*y[j];
-            InputPosition_y[i]+=DifferentialInputPosition_y[i]*dt;///////////////////////////////
+        for(int i=0;i<PredictionTime*2;i++){
+            for(int j=0;j<GMRES_RepeatTime;j++){
+                if(i%2==0)DifferentialLeftPower[i/2]+=OrthogonalBasis[j,i]*y[j];
+                if(i%2==1)DifferentialRightPower[(i-1)/2]+=OrthogonalBasis[j,i]*y[j];
+            }
+            LeftPower[i/2]+=DifferentialLeftPower[i/2]*dt;
+            RightPower[(i-1)/2]+=DifferentialLeftPower[(i-1)/2]*dt;
         }
 
-        //move predictiove objet's position indicater
-        for(int i=1;i<PredictionTime;i++)PredictivePositionIndicaterTransform[i].position=new Vector3(0,ObjectPosition_y[i],-0.1f);
         
-        Debug.Log(ObjectPosition_y[0]);
+        Debug.Log(LeftPower[0]);
     }
 }
 
