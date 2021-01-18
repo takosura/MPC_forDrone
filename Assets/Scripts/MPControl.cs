@@ -117,13 +117,14 @@ public class MPControl : MonoBehaviour{
 
     // Update is called once per frame
     void FixedUpdate(){
-        
-        Debug.Log(LeftPower[0]);
         // モデルへの入力
         if(MPC_mode){
-            rb.AddForce(new Vector2( -(LeftPower[0]+RightPower[0])*Mathf.Sin(BodyAngle[0]*DegToRad)/Mass,(LeftPower[0]+RightPower[0])*Mathf.Cos(BodyAngle[0]*DegToRad)/Mass));
+            rb.AddForce(new Vector2(-(LeftPower[0]+RightPower[0])*Mathf.Sin(BodyAngle[0]*DegToRad),(LeftPower[0]+RightPower[0])*Mathf.Cos(BodyAngle[0]*DegToRad)));
             rb.AddTorque(-TorqueConstent*(LeftPower[0]-RightPower[0]));
         }
+        Debug.Log(-(LeftPower[0]+RightPower[0])*Mathf.Sin(BodyAngle[0]*DegToRad)/Mass);
+        Debug.Log((LeftPower[0]+RightPower[0])*Mathf.Cos(BodyAngle[0]*DegToRad)/Mass);
+        Debug.Log(BodyAngle[0]*DegToRad);
 
         //measure real delta time (not evaluation delta time)
         //制御ループ周期(dt)測定
@@ -135,7 +136,7 @@ public class MPControl : MonoBehaviour{
         BodyPosition_y[0]=BodyTransform.position.y; 
         BodyVelocity_x[0]=(BodyPosition_x[0]-PreviousBodyPosition_x)/dt; 
         BodyVelocity_y[0]=(BodyPosition_y[0]-PreviousBodyPosition_y)/dt; 
-        BodyAngle[0]=BodyTransform.localEulerAngles.z;
+        BodyAngle[0]= BodyTransform.localEulerAngles.z<180?BodyTransform.localEulerAngles.z:BodyTransform.localEulerAngles.z-360;
         BodyRev[0]=(BodyAngle[0]-PreviousBodyAngle)/dt;
         PreviousBodyPosition_x=BodyPosition_x[0]; 
         PreviousBodyPosition_y=BodyPosition_y[0]; 
@@ -150,14 +151,14 @@ public class MPControl : MonoBehaviour{
         //forsee ObjectPosition[i] and ObjectVelocity[i] using ObjectPosition[0] and ObjectVelocity[0], given InputPosition[i]
         //上で与えられたv[τ=0],x[τ=0](つまりv[t],x[t])とuからx[i],v[i]を順に予想していく
         for(int i=1;i<PredictionTime+1; i++) {
-            float force_x=(LeftPower[i-1]+RightPower[i-1])*Mathf.Sin(BodyAngle[i-1]*DegToRad);
+            float force_x=-(LeftPower[i-1]+RightPower[i-1])*Mathf.Sin(BodyAngle[i-1]*DegToRad);
             float force_y=(LeftPower[i-1]+RightPower[i-1])*Mathf.Cos(BodyAngle[i-1]*DegToRad)-Mass*GrabityConstant;
-            BodyPosition_x[i]=BodyPosition_x[i-1]+BodyVelocity_x[i-1]*EvaluationDeltaTime+force_x*EvaluationDeltaTime*EvaluationDeltaTime/2; 
-            BodyPosition_y[i]=BodyPosition_y[i-1]+BodyVelocity_y[i-1]*EvaluationDeltaTime+force_y*EvaluationDeltaTime*EvaluationDeltaTime/2; 
+            BodyPosition_x[i]=BodyPosition_x[i-1]+BodyVelocity_x[i-1]*EvaluationDeltaTime+force_x/Mass*EvaluationDeltaTime*EvaluationDeltaTime/2; 
+            BodyPosition_y[i]=BodyPosition_y[i-1]+BodyVelocity_y[i-1]*EvaluationDeltaTime+force_y/Mass*EvaluationDeltaTime*EvaluationDeltaTime/2; 
             BodyVelocity_x[i]=BodyVelocity_x[i-1]+force_x*EvaluationDeltaTime;
             BodyVelocity_y[i]=BodyVelocity_y[i-1]+force_y*EvaluationDeltaTime;
-            BodyAngle[i]=BodyAngle[i-1]+BodyRev[i-1]*EvaluationDeltaTime+TorqueConstent*(LeftPower[i-1]-RightPower[i-1])*EvaluationDeltaTime*EvaluationDeltaTime/2;
-            BodyRev[i]=BodyRev[i-1]+TorqueConstent*(LeftPower[i-1]-RightPower[i-1])*EvaluationDeltaTime;
+            BodyAngle[i]=BodyAngle[i-1]+BodyRev[i-1]*EvaluationDeltaTime-TorqueConstent*(LeftPower[i-1]-RightPower[i-1])*EvaluationDeltaTime*EvaluationDeltaTime/2;
+            BodyRev[i]=BodyRev[i-1]-TorqueConstent*(LeftPower[i-1]-RightPower[i-1])*EvaluationDeltaTime;
         }
 
         //calculate AdjointVector[i,0]and[i,1] :[i,0] for position, [i,1] for velocity
@@ -207,7 +208,7 @@ public class MPControl : MonoBehaviour{
         }
         DifferenceInnerProduct=Mathf.Sqrt(DifferenceInnerProduct);
 
-        for(int i=0;i<PredictionTime; i++) OrthogonalBasis[0,i]=Difference[i]/DifferenceInnerProduct;
+        for(int i=0;i<PredictionTime*2; i++) OrthogonalBasis[0,i]=Difference[i]/DifferenceInnerProduct;
 
         float[,] h=new float[GMRES_RepeatTime+1, GMRES_RepeatTime];//gyo, retu 
         float[] y=new float[GMRES_RepeatTime]; 
@@ -289,8 +290,8 @@ public class MPControl : MonoBehaviour{
                 if(i%2==0)DifferentialLeftPower[i/2]+=OrthogonalBasis[j,i]*y[j];
                 if(i%2==1)DifferentialRightPower[(i-1)/2]+=OrthogonalBasis[j,i]*y[j];
             }
-            LeftPower[i/2]+=DifferentialLeftPower[i/2]*dt;
-            RightPower[(i-1)/2]+=DifferentialLeftPower[(i-1)/2]*dt;
+            if(i%2==0)LeftPower[i/2]+=DifferentialLeftPower[i/2]*dt;
+            if(i%2==1)RightPower[(i-1)/2]+=DifferentialLeftPower[(i-1)/2]*dt;
         }
 
         

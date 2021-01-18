@@ -134,7 +134,6 @@ GameObject:
   - component: {fileID: 29622154}
   - component: {fileID: 29622157}
   - component: {fileID: 29622156}
-  - component: {fileID: 29622155}
   m_Layer: 0
   m_Name: PowerIndicaterRight
   m_TagString: Untagged
@@ -156,19 +155,6 @@ Transform:
   m_Father: {fileID: 1209337686}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &29622155
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 29622153}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &29622156
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -229,13 +215,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: PrePos
       objectReference: {fileID: 0}
+    - target: {fileID: 2157497751676767370, guid: 3b53ff6d7054c4447a0b94a4186938ec, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6817024968357327864, guid: 3b53ff6d7054c4447a0b94a4186938ec, type: 3}
       propertyPath: m_RootOrder
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6817024968357327864, guid: 3b53ff6d7054c4447a0b94a4186938ec, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 6817024968357327864, guid: 3b53ff6d7054c4447a0b94a4186938ec, type: 3}
       propertyPath: m_LocalPosition.y
@@ -397,7 +387,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 2
   m_Material: {fileID: 0}
   m_Interpolate: 0
   m_SleepingMode: 1
@@ -479,7 +469,6 @@ GameObject:
   - component: {fileID: 1289237748}
   - component: {fileID: 1289237751}
   - component: {fileID: 1289237750}
-  - component: {fileID: 1289237749}
   m_Layer: 0
   m_Name: PowerIndicaterLeft
   m_TagString: Untagged
@@ -501,19 +490,6 @@ Transform:
   m_Father: {fileID: 1209337686}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1289237749
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1289237747}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1289237750
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -594,7 +570,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mpc_control: {fileID: 1461838495}
-  TorqueConstant: 1
+  TorqueConstant: 3
   GrabityConstant: 9.81
   Body: {fileID: 1209337682}
   PredictivePositionIndicaterSample: {fileID: 572058289}
@@ -633,13 +609,18 @@ MonoBehaviour:
   GMRES_RepeatTime: 2
   PredictionTime: 10
   StableConstant: 100
-  XConstant: 1
-  YConstant: 1
-  ThetaConstant: 2
-  dThetaConstant_Stage: 3
-  LForceConstant_Stage: 0.1
-  RForceConstant_Stage: 0.1
-  FinalEvaluarionScope: 0.3
+  XConstant: 3
+  XConstant_Stage: 1
+  dXConstant_Stage: 1
+  YConstant: 3
+  YConstant_Stage: 1
+  dYConstant_Stage: 1
+  ThetaConstant: 1
+  ThetaConstant_Stage: 1
+  dThetaConstant_Stage: 1
+  LForceConstant_Stage: 1
+  RForceConstant_Stage: 1
+  FinalEvaluarionScope: 0.2
   BodyPosition_x: []
   BodyPosition_y: []
   BodyAngle: []

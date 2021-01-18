@@ -20,6 +20,8 @@ public class Natural : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        PowerIndicaterTransformLeft=PowerIndicaterLeft.GetComponent<Transform>();
+        PowerIndicaterTransformRight=PowerIndicaterRight.GetComponent<Transform>();
         PredictionTime=mpc_control.PredictionTime;
         PredictivePositionIndicater=new GameObject[PredictionTime+1];
         PredictivePositionIndicaterTransform=new Transform[PredictionTime+1]; 
@@ -35,8 +37,10 @@ public class Natural : MonoBehaviour
     {
         LeftPower=mpc_control.LeftPower[0];
         RightPower=mpc_control.RightPower[0];
-        BodyPosition_x=mpc_control.BodyPosition_x[0];
-        BodyPosition_y=mpc_control.BodyPosition_y[0];
-        for(int i=1;i<PredictionTime;i++)PredictivePositionIndicaterTransform[i].position=new Vector3(BodyPosition_x,BodyPosition_y,-0.1f);
+        PowerIndicaterTransformLeft.localScale=new Vector3(0.05f,LeftPower/10,1);
+        PowerIndicaterTransformLeft.localPosition=new Vector3(-0.45f,LeftPower/10/2+0.5f,0);
+        PowerIndicaterTransformRight.localScale=new Vector3(0.05f,RightPower/10,1);
+        PowerIndicaterTransformRight.localPosition=new Vector3(0.45f,RightPower/10/2+0.5f,0);
+        for(int i=1;i<PredictionTime;i++)PredictivePositionIndicaterTransform[i].position=new Vector3(mpc_control.BodyPosition_x[i],mpc_control.BodyPosition_y[i],-1f);
     }
 }
