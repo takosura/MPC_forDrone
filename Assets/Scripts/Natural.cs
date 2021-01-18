@@ -16,13 +16,17 @@ public class Natural : MonoBehaviour
     float RightPower,LeftPower;
     GameObject[] PredictivePositionIndicater;
     Transform[] PredictivePositionIndicaterTransform;
+    Vector3[] PositionIndicaterPosition;
     int PredictionTime;
+    LineRenderer lineRenderer;
+
     // Start is called before the first frame update
     void Start()
     {
         PowerIndicaterTransformLeft=PowerIndicaterLeft.GetComponent<Transform>();
         PowerIndicaterTransformRight=PowerIndicaterRight.GetComponent<Transform>();
         PredictionTime=mpc_control.PredictionTime;
+        PositionIndicaterPosition=new Vector3[PredictionTime];
         PredictivePositionIndicater=new GameObject[PredictionTime+1];
         PredictivePositionIndicaterTransform=new Transform[PredictionTime+1]; 
         BodyTransform=Body.GetComponent<Transform>();
@@ -30,6 +34,9 @@ public class Natural : MonoBehaviour
             PredictivePositionIndicater[i]=Instantiate(PredictivePositionIndicaterSample); 
             PredictivePositionIndicaterTransform[i]=PredictivePositionIndicater[i].GetComponent<Transform>();
         }
+        lineRenderer=gameObject.AddComponent<LineRenderer>();
+        lineRenderer.positionCount=PredictionTime;
+        lineRenderer.widthMultiplier=0.02f;
     }
 
     // Update is called once per frame
@@ -41,6 +48,11 @@ public class Natural : MonoBehaviour
         PowerIndicaterTransformLeft.localPosition=new Vector3(-0.45f,LeftPower/10/2+0.5f,0);
         PowerIndicaterTransformRight.localScale=new Vector3(0.05f,RightPower/10,1);
         PowerIndicaterTransformRight.localPosition=new Vector3(0.45f,RightPower/10/2+0.5f,0);
-        for(int i=1;i<PredictionTime;i++)PredictivePositionIndicaterTransform[i].position=new Vector3(mpc_control.BodyPosition_x[i],mpc_control.BodyPosition_y[i],-1f);
+        lineRenderer.SetPosition(0,new Vector3(mpc_control.BodyPosition_x[0],mpc_control.BodyPosition_y[0],-0.9f));
+        for(int i=1;i<PredictionTime;i++){
+            PredictivePositionIndicaterTransform[i].position=new Vector3(mpc_control.BodyPosition_x[i],mpc_control.BodyPosition_y[i],-1f);
+            PositionIndicaterPosition[i]=new Vector3(PredictivePositionIndicaterTransform[i].position.x,PredictivePositionIndicaterTransform[i].position.y,-0.9f);
+            lineRenderer.SetPosition(i,PositionIndicaterPosition[i]);
+        }
     }
 }
