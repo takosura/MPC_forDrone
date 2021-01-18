@@ -29,7 +29,8 @@ public class MPControl : MonoBehaviour{
     public int PredictionTime=10;
     public float StableConstant=100;
     GameObject Body;
-    public float XConstant, YConstant, ThetaConstant,dThetaConstant_Stage, LForceConstant_Stage,RForceConstant_Stage;
+    public float XConstant,XConstant_Stage,dXConstant_Stage, YConstant,YConstant_Stage,dYConstant_Stage,
+                                ThetaConstant,ThetaConstant_Stage,dThetaConstant_Stage, LForceConstant_Stage,RForceConstant_Stage;
     public float FinalEvaluarionScope=0.5f;//[s]
     public float[] BodyPosition_x,BodyPosition_y;//x,y
     public float[] BodyAngle;
@@ -45,6 +46,11 @@ public class MPControl : MonoBehaviour{
     float InitialTime;
     float GrabityConstant;
     float Mass;
+    const float DegToRad=Mathf.PI/180
+    
+    
+    
+    ;
 
     // Start is called before the first frame update
     void Start(){
@@ -111,10 +117,12 @@ public class MPControl : MonoBehaviour{
 
     // Update is called once per frame
     void FixedUpdate(){
+        
+        Debug.Log(LeftPower[0]);
         // モデルへの入力
         if(MPC_mode){
-            rb.AddForce(new Vector2((LeftPower[0]+RightPower[0])*Mathf.Sin(BodyAngle[0])/Mass,(LeftPower[0]+RightPower[0])*Mathf.Cos(BodyAngle[0])/Mass));
-            rb.AddTorque(TorqueConstent*(LeftPower[0]-RightPower[0]));
+            rb.AddForce(new Vector2( -(LeftPower[0]+RightPower[0])*Mathf.Sin(BodyAngle[0]*DegToRad)/Mass,(LeftPower[0]+RightPower[0])*Mathf.Cos(BodyAngle[0]*DegToRad)/Mass));
+            rb.AddTorque(-TorqueConstent*(LeftPower[0]-RightPower[0]));
         }
 
         //measure real delta time (not evaluation delta time)
@@ -142,8 +150,8 @@ public class MPControl : MonoBehaviour{
         //forsee ObjectPosition[i] and ObjectVelocity[i] using ObjectPosition[0] and ObjectVelocity[0], given InputPosition[i]
         //上で与えられたv[τ=0],x[τ=0](つまりv[t],x[t])とuからx[i],v[i]を順に予想していく
         for(int i=1;i<PredictionTime+1; i++) {
-            float force_x=(LeftPower[i-1]+RightPower[i-1])*Mathf.Sin(BodyAngle[i-1]);
-            float force_y=(LeftPower[i-1]+RightPower[i-1])*Mathf.Cos(BodyAngle[i-1])-Mass*GrabityConstant;
+            float force_x=(LeftPower[i-1]+RightPower[i-1])*Mathf.Sin(BodyAngle[i-1]*DegToRad);
+            float force_y=(LeftPower[i-1]+RightPower[i-1])*Mathf.Cos(BodyAngle[i-1]*DegToRad)-Mass*GrabityConstant;
             BodyPosition_x[i]=BodyPosition_x[i-1]+BodyVelocity_x[i-1]*EvaluationDeltaTime+force_x*EvaluationDeltaTime*EvaluationDeltaTime/2; 
             BodyPosition_y[i]=BodyPosition_y[i-1]+BodyVelocity_y[i-1]*EvaluationDeltaTime+force_y*EvaluationDeltaTime*EvaluationDeltaTime/2; 
             BodyVelocity_x[i]=BodyVelocity_x[i-1]+force_x*EvaluationDeltaTime;
@@ -166,12 +174,12 @@ public class MPControl : MonoBehaviour{
         //following AdjointVector[last], AdjointVector[last -1] can be calculated by AdjointVector[last -1]=AdjointVector[last]+ ðH/ðx, and so on.
         //
         for(int i=PredictionTime-1;i>0;i--){ 
-            AdjointVector_x[i]=AdjointVector_x[i+1];
-            AdjointVector_y[i]=AdjointVector_y[i+1];
-            AdjointVector_dx[i]=AdjointVector_dx[i+1]+AdjointVector_x[i+1]*EvaluationDeltaTime; 
-            AdjointVector_dy[i]=AdjointVector_dy[i+1]+AdjointVector_x[i+1]*EvaluationDeltaTime;
-            AdjointVector_theta[i]=AdjointVector_theta[i+1]+(AdjointVector_dx[i+1]/Mass*(LeftPower[i]+RightPower[i])*Mathf.Cos(BodyAngle[i])
-                                                            +AdjointVector_dy[i+1]/Mass*(LeftPower[i]+RightPower[i])*Mathf.Sin(BodyAngle[i]))*EvaluationDeltaTime;
+            AdjointVector_x[i]=AdjointVector_x[i+1]+XConstant_Stage*(BodyPosition_x[i]-PositionReference_x)*EvaluationDeltaTime;
+            AdjointVector_dx[i]=AdjointVector_dx[i+1]+(dXConstant_Stage*BodyVelocity_x[i]+AdjointVector_x[i+1])*EvaluationDeltaTime;
+            AdjointVector_y[i]=AdjointVector_y[i+1]+YConstant_Stage*(BodyPosition_y[i]-PositionReference_y)*EvaluationDeltaTime;
+            AdjointVector_dy[i]=AdjointVector_dy[i+1]+(dYConstant_Stage*BodyVelocity_y[i]+AdjointVector_y[i+1])*EvaluationDeltaTime;
+            AdjointVector_theta[i]=AdjointVector_theta[i+1]+(ThetaConstant_Stage*BodyAngle[i]-AdjointVector_dx[i+1]/Mass*(LeftPower[i]+RightPower[i])*Mathf.Cos(BodyAngle[i]*DegToRad)
+                                                            -AdjointVector_dy[i+1]/Mass*(LeftPower[i]+RightPower[i])*Mathf.Sin(BodyAngle[i]*DegToRad))*EvaluationDeltaTime;
             AdjointVector_dtheta[i]=AdjointVector_dtheta[i+1]+(dThetaConstant_Stage*BodyRev[i]+AdjointVector_theta[i+1])*EvaluationDeltaTime;
         }
 
@@ -183,14 +191,14 @@ public class MPControl : MonoBehaviour{
         float[,] OrthogonalBasis=new float[GMRES_RepeatTime+1, PredictionTime*2]; 
 
         for(int i=0;i<PredictionTime;i++) {
-            float F_LeftPower=LForceConstant_Stage*LeftPower[i]+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i])
-                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i])+TorqueConstent*AdjointVector_dtheta[i+1];
-            float F_RightPower=RForceConstant_Stage*RightPower[i]+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i])
-                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i])-TorqueConstent*AdjointVector_dtheta[i+1];
-            float DhF_LeftPower=LForceConstant_Stage*(LeftPower[i]+Difference_Left[i]*EvaluationDeltaTime)+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)
-                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)+TorqueConstent*AdjointVector_dtheta[i+1];
-            float DhF_RightPower=RForceConstant_Stage*(RightPower[i]+Difference_Rigit[i]*EvaluationDeltaTime)+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)
-                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)+TorqueConstent*AdjointVector_dtheta[i+1];
+            float F_LeftPower=LForceConstant_Stage*LeftPower[i]-AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]*DegToRad)
+                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]*DegToRad)-TorqueConstent*AdjointVector_dtheta[i+1];
+            float F_RightPower=RForceConstant_Stage*RightPower[i]-AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]*DegToRad)
+                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]*DegToRad)+TorqueConstent*AdjointVector_dtheta[i+1];
+            float DhF_LeftPower=LForceConstant_Stage*(LeftPower[i]+Difference_Left[i]*EvaluationDeltaTime)-AdjointVector_dx[i+1]/Mass*Mathf.Sin((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)
+                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)-TorqueConstent*AdjointVector_dtheta[i+1];
+            float DhF_RightPower=RForceConstant_Stage*(RightPower[i]+Difference_Rigit[i]*EvaluationDeltaTime)-AdjointVector_dx[i+1]/Mass*Mathf.Sin((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)
+                                    +AdjointVector_dy[i+1]/Mass*Mathf.Cos((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)+TorqueConstent*AdjointVector_dtheta[i+1];
             Difference_Left[i]=-StableConstant*F_LeftPower-(DhF_LeftPower-F_LeftPower)/EvaluationDeltaTime; 
             Difference_Rigit[i]=-StableConstant*F_RightPower-(DhF_RightPower-F_RightPower)/EvaluationDeltaTime;
             Difference[i*2]=Difference_Left[i];
@@ -211,14 +219,14 @@ public class MPControl : MonoBehaviour{
         }
         for(int i=0;i<GMRES_RepeatTime; i++){
             for(int j=0; j<PredictionTime; j++) {
-                float F_LeftPower=LForceConstant_Stage*LeftPower[i]+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)
-                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)+TorqueConstent*AdjointVector_dtheta[i+1];
-                float F_RightPower=RForceConstant_Stage*RightPower[i]+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)
-                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)-TorqueConstent*AdjointVector_dtheta[i+1];
-                float DhF_LeftPower_v=LForceConstant_Stage*(LeftPower[i]+OrthogonalBasis[i,j]*EvaluationDeltaTime)+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)
-                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)+TorqueConstent*AdjointVector_dtheta[i+1];
-                float DhF_RightPower_v=RForceConstant_Stage*(RightPower[i]+OrthogonalBasis[i,j]*EvaluationDeltaTime)+AdjointVector_dx[i+1]/Mass*Mathf.Sin(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)
-                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos(BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)+TorqueConstent*AdjointVector_dtheta[i+1];
+                float F_LeftPower=LForceConstant_Stage*LeftPower[i]-AdjointVector_dx[i+1]/Mass*Mathf.Sin((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)
+                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)-TorqueConstent*AdjointVector_dtheta[i+1];
+                float F_RightPower=RForceConstant_Stage*RightPower[i]-AdjointVector_dx[i+1]/Mass*Mathf.Sin((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)
+                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)+TorqueConstent*AdjointVector_dtheta[i+1];
+                float DhF_LeftPower_v=LForceConstant_Stage*(LeftPower[i]+OrthogonalBasis[i,j]*EvaluationDeltaTime)-AdjointVector_dx[i+1]/Mass*Mathf.Sin((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)
+                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)-TorqueConstent*AdjointVector_dtheta[i+1];
+                float DhF_RightPower_v=RForceConstant_Stage*(RightPower[i]+OrthogonalBasis[i,j]*EvaluationDeltaTime)-AdjointVector_dx[i+1]/Mass*Mathf.Sin((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)
+                                        +AdjointVector_dy[i+1]/Mass*Mathf.Cos((BodyAngle[i]+BodyRev[i]*EvaluationDeltaTime)*DegToRad)+TorqueConstent*AdjointVector_dtheta[i+1];
                 OrthogonalBasis[i+1,j*2]=(DhF_LeftPower_v-F_LeftPower)/EvaluationDeltaTime; 
                 OrthogonalBasis[i+1,j*2+1]=(DhF_RightPower_v-F_RightPower)/EvaluationDeltaTime; 
             }
@@ -286,7 +294,6 @@ public class MPControl : MonoBehaviour{
         }
 
         
-        Debug.Log(LeftPower[0]);
     }
 }
 
