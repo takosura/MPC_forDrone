@@ -219,6 +219,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2795613872253666515, guid: 3b53ff6d7054c4447a0b94a4186938ec, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 8ff1d43e9438f1645baeb2c68ea2d486, type: 2}
     - target: {fileID: 6817024968357327864, guid: 3b53ff6d7054c4447a0b94a4186938ec, type: 3}
       propertyPath: m_RootOrder
       value: 4
@@ -387,7 +391,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
-  m_GravityScale: 2
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_Interpolate: 0
   m_SleepingMode: 1
@@ -570,8 +574,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mpc_control: {fileID: 1461838495}
-  TorqueConstant: 3
-  GrabityConstant: 9.81
+  TorqueConstant: 0.5
+  GrabityConstant: 0
   Body: {fileID: 1209337682}
   PredictivePositionIndicaterSample: {fileID: 572058289}
   PowerIndicaterLeft: {fileID: 1289237747}
@@ -584,7 +588,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1461838491}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.3360631, y: 0.051368468, z: -8.913195}
+  m_LocalPosition: {x: 0.721, y: 0.051368468, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -604,23 +608,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MPC_mode: 1
   PositionReference_x: 0
-  PositionReference_y: 0
+  PositionReference_y: 2
   natural: {fileID: 1461838492}
-  GMRES_RepeatTime: 2
+  GMRES_RepeatTime: 3
   PredictionTime: 10
   StableConstant: 100
   XConstant: 3
   XConstant_Stage: 1
-  dXConstant_Stage: 1
+  dXConstant_Stage: 0
   YConstant: 3
   YConstant_Stage: 1
-  dYConstant_Stage: 1
+  dYConstant_Stage: 0
   ThetaConstant: 1
   ThetaConstant_Stage: 1
   dThetaConstant_Stage: 1
-  LForceConstant_Stage: 1
-  RForceConstant_Stage: 1
-  FinalEvaluarionScope: 0.2
+  LForceConstant_Stage: 100
+  RForceConstant_Stage: 100
+  FinalEvaluarionScope: 0.5
   BodyPosition_x: []
   BodyPosition_y: []
   BodyAngle: []
