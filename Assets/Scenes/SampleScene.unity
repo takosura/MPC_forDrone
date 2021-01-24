@@ -390,7 +390,7 @@ Rigidbody2D:
   m_UseAutoMass: 0
   m_Mass: 1
   m_LinearDrag: 0
-  m_AngularDrag: 0.05
+  m_AngularDrag: 0.2
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_Interpolate: 0
@@ -554,6 +554,8 @@ GameObject:
   - component: {fileID: 1461838493}
   - component: {fileID: 1461838492}
   - component: {fileID: 1461838495}
+  - component: {fileID: 1461838494}
+  - component: {fileID: 1461838496}
   m_Layer: 0
   m_Name: forScript
   m_TagString: Untagged
@@ -573,9 +575,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9d9693ea31bcd7449867aada710c4d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mpc_control: {fileID: 1461838495}
+  CONTROL_MODE: 2
+  mpc_1: {fileID: 1461838495}
+  mpc_2: {fileID: 1461838494}
+  mpc_3: {fileID: 1461838496}
   TorqueConstant: 0.5
-  GrabityConstant: 0
+  GrabityConstant: 1
+  Mass: 1
   Body: {fileID: 1209337682}
   PredictivePositionIndicaterSample: {fileID: 572058289}
   PowerIndicaterLeft: {fileID: 1289237747}
@@ -594,6 +600,47 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1461838494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1461838491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4db7779cff479c842af69a91ae34ff1c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PositionReference_x: 1
+  PositionReference_y: 2
+  natural: {fileID: 1461838492}
+  Force_x: []
+  Force_y: []
+  GMRES_RepeatTime: 2
+  PredictionTime: 20
+  StableConstant: 100
+  XConstant: 5
+  XConstant_Stage: 0
+  dXConstant_Stage: 0.5
+  YConstant: 5
+  YConstant_Stage: 0
+  dYConstant_Stage: 0.5
+  ThetaConstant: 0
+  ThetaConstant_Stage: 0
+  dThetaConstant_Stage: 0
+  LForceConstant_Stage: 0
+  RForceConstant_Stage: 0
+  Force_x_Constant_Stage: 0.1
+  Force_y_Constant_Stage: 0.1
+  dForce_x_Constant_Stage: 5
+  dForce_y_Constant_Stage: 10
+  FinalEvaluarionScope: 2
+  BodyPosition_x: []
+  BodyPosition_y: []
+  BodyAngle: []
+  LeftPower: []
+  RightPower: []
 --- !u!114 &1461838495
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -607,8 +654,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MPC_mode: 1
-  PositionReference_x: 0
-  PositionReference_y: 2
+  PositionReference_x: -1
+  PositionReference_y: -1
   natural: {fileID: 1461838492}
   GMRES_RepeatTime: 3
   PredictionTime: 10
@@ -619,11 +666,53 @@ MonoBehaviour:
   YConstant: 3
   YConstant_Stage: 1
   dYConstant_Stage: 0
-  ThetaConstant: 1
-  ThetaConstant_Stage: 1
-  dThetaConstant_Stage: 1
-  LForceConstant_Stage: 100
-  RForceConstant_Stage: 100
+  ThetaConstant: 0
+  ThetaConstant_Stage: 0
+  dThetaConstant_Stage: 0
+  LForceConstant_Stage: 0.2
+  RForceConstant_Stage: 0.3
+  FinalEvaluarionScope: 0.5
+  BodyPosition_x: []
+  BodyPosition_y: []
+  BodyAngle: []
+  LeftPower: []
+  RightPower: []
+--- !u!114 &1461838496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1461838491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a76458708a899947864525cd17fac5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PositionReference_x: 1
+  PositionReference_y: 1
+  natural: {fileID: 1461838492}
+  Force_x: []
+  Force_y: []
+  GMRES_RepeatTime: 2
+  PredictionTime: 20
+  StableConstant: 100
+  XConstant: 5
+  XConstant_Stage: 0
+  dXConstant_Stage: 1
+  YConstant: 5
+  YConstant_Stage: 0
+  dYConstant_Stage: 1
+  ThetaConstant: 0
+  ThetaConstant_Stage: 0
+  dThetaConstant_Stage: 0
+  diffThetaConstant: 0
+  LForceConstant_Stage: 0
+  RForceConstant_Stage: 0
+  Force_x_Constant_Stage: 0.1
+  Force_y_Constant_Stage: 0.1
+  dForce_x_Constant_Stage: 0.01
+  dForce_y_Constant_Stage: 0.01
   FinalEvaluarionScope: 0.5
   BodyPosition_x: []
   BodyPosition_y: []
